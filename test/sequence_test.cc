@@ -20,7 +20,7 @@ std::vector<std::vector<Sequence>> out = {
     {},
     {},
     {{"fdsa", "fdsaf", "fdsafdsa"}},
-    {{"fdsa", "fdsa", "fdsafsda"}}};
+    {}};
 
 int main() {
   for (int i = 0; i < (int)in.size(); ++i) {
@@ -33,6 +33,8 @@ int main() {
                 sequences[j].description == out[i][j].description &&
                 sequences[j].sequence == out[i][j].sequence;
       }
+    } else {
+      same = false;
     }
     if (same) {
       printf("OK\n");
