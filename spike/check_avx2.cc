@@ -15,8 +15,15 @@ const bool kHasSse4_1 = true;
 const bool kHasSse4_1 = false;
 #endif
 
+#ifdef __SSE4_2__
+const bool kHasSse4_2 = true;
+#else
+const bool kHasSse4_2 = false;
+#endif
+
 int main() {
   printf("Has AVX2: %d\n", kHasAvx2);
   printf("Has SSE4.1: %d\n", kHasSse4_1);
+  printf("Has SSE4.2: %d\n", kHasSse4_2);
   return 0;
 }
