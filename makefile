@@ -3,9 +3,10 @@ SRCDIR=src
 BINDIR=bin
 TESTDIR=test
 SPIKEDIR=spike
+SIMDEXMPSDIR=simd_examples
 RM=rm
 INC=include
-CFLAGS=-Wall -std=c++11 -march=native -I $(INC)
+CFLAGS=-Wall -std=c++11 -march=native -I $(INC) -O2
 
 sequence: $(SRCDIR)/sequence.cc $(INC)/sequence.h
 	$(CC) $(CFLAGS) $(SRCDIR)/sequence.cc -c -o $(BINDIR)/sequence.o
@@ -27,6 +28,9 @@ check_avx2: $(SPIKEDIR)/check_avx2.cc
 
 fasta_statistics: $(SPIKEDIR)/fasta_statistics.cc sequence
 	$(CC) $(CFLAGS) $(SPIKEDIR)/fasta_statistics.cc $(BINDIR)/sequence.o -o $(BINDIR)/fasta_statistics
+
+string_compare: $(SIMDEXMPSDIR)/string_compare.cc
+	$(CC) $(CFLAGS) $(SIMDEXMPSDIR)/string_compare.cc -o $(BINDIR)/string_compare
 
 test: sequence_test matrix_test matrix_test2 matrix_test3
 	$(BINDIR)/sequence_test
