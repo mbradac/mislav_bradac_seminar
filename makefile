@@ -32,6 +32,9 @@ fasta_statistics: $(SPIKEDIR)/fasta_statistics.cc sequence
 string_compare: $(SIMDEXMPSDIR)/string_compare.cc
 	$(CC) $(CFLAGS) $(SIMDEXMPSDIR)/string_compare.cc -o $(BINDIR)/string_compare
 
+vector_matrix_4x4: $(SIMDEXMPSDIR)/vector_matrix_4x4.cc
+	$(CC) $(CFLAGS) $(SIMDEXMPSDIR)/vector_matrix_4x4.cc -o $(BINDIR)/vector_matrix_4x4
+
 test: sequence_test matrix_test matrix_test2 matrix_test3
 	$(BINDIR)/sequence_test
 	$(BINDIR)/matrix_test
