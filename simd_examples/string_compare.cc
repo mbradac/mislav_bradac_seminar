@@ -26,7 +26,12 @@ bool CompareString(const char *a, const char *b, int length) {
 
 bool CompareStringSimd(const char *a, const char *b, int length) {
   int i;
-  for (i = 0; i + 15 < length; i += 16) {
+  for (i = 0; i < length && (i & 0xf); ++i) {
+    if (*a != *b) return false;
+    ++a;
+    ++b;
+  }
+  for (; i + 15 < length; i += 16) {
     __m128i av = _mm_load_si128((const __m128i *)a);
     __m128i bv = _mm_load_si128((const __m128i *)b);
     __m128i cmp = _mm_cmpeq_epi32(av, bv);
