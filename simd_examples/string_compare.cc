@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <cassert>
+#include <cstring>
 extern "C" {
 #include <immintrin.h>
 }
@@ -26,14 +27,9 @@ bool CompareString(const char *a, const char *b, int length) {
 
 bool CompareStringSimd(const char *a, const char *b, int length) {
   int i;
-  for (i = 0; i < length && (i & 0xf); ++i) {
-    if (*a != *b) return false;
-    ++a;
-    ++b;
-  }
-  for (; i + 15 < length; i += 16) {
-    __m128i av = _mm_load_si128((const __m128i *)a);
-    __m128i bv = _mm_load_si128((const __m128i *)b);
+  for (i = 0; i + 15 < length; i += 16) {
+    __m128i av = _mm_loadu_si128((const __m128i *)a);
+    __m128i bv = _mm_loadu_si128((const __m128i *)b);
     __m128i cmp = _mm_cmpeq_epi32(av, bv);
     int mask = _mm_movemask_epi8(cmp);
     if (mask != 0xFFFF) return false;
@@ -58,17 +54,21 @@ int main() {
   static char b[kMaxLength];
   double simd_time = 0.0;
   double no_simd_time = 0.0;
+  double memcmp_time = 0.0;
 
   int difference_position = -1;
   Generate(a, b, kMaxLength);
   for (int i = 0; i < kNumStrings; ++i) {
     bool same = i < kNumStrings / 2;
+    if (difference_position != -1) {
+      b[difference_position] = a[difference_position];
+    }
+    difference_position = rand() % kMaxLength;
     if (!same) {
-      if (difference_position != -1) {
-        b[difference_position] = a[difference_position];
-      }
-      difference_position = rand() % kMaxLength;
       b[difference_position] = a[difference_position] + 1;
+    } else {
+      b[difference_position] = a[difference_position];
+      difference_position = -1;
     }
     {
       clock_t start_time = clock();
@@ -82,10 +82,16 @@ int main() {
       no_simd_time += (double)(clock() - start_time) / CLOCKS_PER_SEC;
       assert(res == same);
     }
+    {
+      clock_t start_time = clock();
+      bool res = memcmp(a, b, kMaxLength) == 0;
+      memcmp_time += (double)(clock() - start_time) / CLOCKS_PER_SEC;
+      assert(res == same);
+    }
   }
   printf(
-      "Compared %d strings with length %d\nSimd time: %.2lf\nNo simd time: "
-      "%.2lf\n",
-      kNumStrings, kMaxLength, simd_time, no_simd_time);
+      "Compared %d strings with length %d\nSimd time: %.4lf\nNo simd time: "
+      "%.4lf\nMemcmp time: %.4lf\n",
+      kNumStrings, kMaxLength, simd_time, no_simd_time, memcmp_time);
   return 0;
 }
