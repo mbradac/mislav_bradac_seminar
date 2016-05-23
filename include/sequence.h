@@ -1,3 +1,6 @@
+#ifndef MISLAV_BRADAC_SEMINAR_SEQUENCE_H_
+#define MISLAV_BRADAC_SEMINAR_SEQUENCE_H_
+
 #include <string>
 #include <vector>
 
@@ -27,3 +30,5 @@ class ScoreMatrix {
 
 int TranslateSequence(Sequence *sequence, const ScoreMatrix &matrix);
 }
+
+#endif  // MISLAC_BRADAC_SEMINAR_SEQUENCE_H_
