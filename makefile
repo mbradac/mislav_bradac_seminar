@@ -35,11 +35,18 @@ string_compare: $(SIMDEXMPSDIR)/string_compare.cc
 vector_matrix_4x4: $(SIMDEXMPSDIR)/vector_matrix_4x4.cc
 	$(CC) $(CFLAGS) $(SIMDEXMPSDIR)/vector_matrix_4x4.cc -o $(BINDIR)/vector_matrix_4x4
 
-test: sequence_test matrix_test matrix_test2 matrix_test3
+smith_waterman_no_simd: $(SPIKEDIR)/smith_waterman_no_simd.cc $(INC)/sequence.h
+	$(CC) $(CFLAGS) $(SPIKEDIR)/smith_waterman_no_simd.cc -c -o $(BINDIR)/smith_waterman_no_simd.o
+
+smith_waterman_no_simd_test: $(TESTDIR)/smith_waterman_no_simd_test.cc smith_waterman_no_simd sequence
+	$(CC) $(CFLAGS) $(TESTDIR)/smith_waterman_no_simd_test.cc $(BINDIR)/smith_waterman_no_simd.o $(BINDIR)/sequence.o -o $(BINDIR)/smith_waterman_no_simd_test
+
+test: sequence_test matrix_test matrix_test2 matrix_test3 smith_waterman_no_simd_test
 	$(BINDIR)/sequence_test
 	$(BINDIR)/matrix_test
 	$(BINDIR)/matrix_test2
 	$(BINDIR)/matrix_test3
+	$(BINDIR)/smith_waterman_no_simd_test
 
 clean:
 	$(RM) -rf BINDIR
