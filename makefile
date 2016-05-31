@@ -8,37 +8,40 @@ RM=rm
 INC=include
 CFLAGS=-Wall -std=c++11 -march=native -I $(INC) -O2
 
-sequence: $(SRCDIR)/sequence.cc $(INC)/sequence.h
+$(BINDIR):
+	mkdir -p $(BINDIR)
+
+sequence: $(SRCDIR)/sequence.cc $(INC)/sequence.h | $(BINDIR)
 	$(CC) $(CFLAGS) $(SRCDIR)/sequence.cc -c -o $(BINDIR)/sequence.o
 
-sequence_test: $(TESTDIR)/sequence_test.cc sequence
+sequence_test: $(TESTDIR)/sequence_test.cc sequence | $(BINDIR)
 	$(CC) $(CFLAGS) $(TESTDIR)/sequence_test.cc $(BINDIR)/sequence.o -o $(BINDIR)/sequence_test
 
-matrix_test: $(TESTDIR)/matrix_test.cc sequence
+matrix_test: $(TESTDIR)/matrix_test.cc sequence | $(BINDIR)
 	$(CC) $(CFLAGS) $(TESTDIR)/matrix_test.cc $(BINDIR)/sequence.o -o $(BINDIR)/matrix_test
 
-matrix_test2: $(TESTDIR)/matrix_test2.cc sequence
+matrix_test2: $(TESTDIR)/matrix_test2.cc sequence | $(BINDIR)
 	$(CC) $(CFLAGS) $(TESTDIR)/matrix_test2.cc $(BINDIR)/sequence.o -o $(BINDIR)/matrix_test2
 
-matrix_test3: $(TESTDIR)/matrix_test3.cc sequence
+matrix_test3: $(TESTDIR)/matrix_test3.cc sequence | $(BINDIR)
 	$(CC) $(CFLAGS) $(TESTDIR)/matrix_test3.cc $(BINDIR)/sequence.o -o $(BINDIR)/matrix_test3
 
-check_avx2: $(SPIKEDIR)/check_avx2.cc
+check_avx2: $(SPIKEDIR)/check_avx2.cc | $(BINDIR)
 	$(CC) $(CFLAGS) $(SPIKEDIR)/check_avx2.cc -o $(BINDIR)/check_avx2
 
-fasta_statistics: $(SPIKEDIR)/fasta_statistics.cc sequence
+fasta_statistics: $(SPIKEDIR)/fasta_statistics.cc sequence | $(BINDIR)
 	$(CC) $(CFLAGS) $(SPIKEDIR)/fasta_statistics.cc $(BINDIR)/sequence.o -o $(BINDIR)/fasta_statistics
 
-string_compare: $(SIMDEXMPSDIR)/string_compare.cc
+string_compare: $(SIMDEXMPSDIR)/string_compare.cc | $(BINDIR)
 	$(CC) $(CFLAGS) $(SIMDEXMPSDIR)/string_compare.cc -o $(BINDIR)/string_compare
 
-vector_matrix_4x4: $(SIMDEXMPSDIR)/vector_matrix_4x4.cc
+vector_matrix_4x4: $(SIMDEXMPSDIR)/vector_matrix_4x4.cc | $(BINDIR)
 	$(CC) $(CFLAGS) $(SIMDEXMPSDIR)/vector_matrix_4x4.cc -o $(BINDIR)/vector_matrix_4x4
 
-smith_waterman_no_simd: $(SPIKEDIR)/smith_waterman_no_simd.cc $(INC)/sequence.h
+smith_waterman_no_simd: $(SPIKEDIR)/smith_waterman_no_simd.cc $(INC)/sequence.h | $(BINDIR)
 	$(CC) $(CFLAGS) $(SPIKEDIR)/smith_waterman_no_simd.cc -c -o $(BINDIR)/smith_waterman_no_simd.o
 
-smith_waterman_no_simd_test: $(TESTDIR)/smith_waterman_no_simd_test.cc smith_waterman_no_simd sequence
+smith_waterman_no_simd_test: $(TESTDIR)/smith_waterman_no_simd_test.cc smith_waterman_no_simd sequence | $(BINDIR)
 	$(CC) $(CFLAGS) $(TESTDIR)/smith_waterman_no_simd_test.cc $(BINDIR)/smith_waterman_no_simd.o $(BINDIR)/sequence.o -o $(BINDIR)/smith_waterman_no_simd_test
 
 test: sequence_test matrix_test matrix_test2 matrix_test3 smith_waterman_no_simd_test
