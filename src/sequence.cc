@@ -42,15 +42,15 @@ int ScoreMatrix::Init(const std::string &score_matrix) {
   if (!getline(matrix_stream, line)) return -1;
   std::string letter;
   std::istringstream line_stream(line);
-  int alphabet_size = 0;
+  alphabet_size_ = 0;
   while (line_stream >> letter) {
     if (letter.size() != 1U) return -2;
-    position_of_letter_[(int)letter[0]] = alphabet_size++;
+    position_of_letter_[(int)letter[0]] = alphabet_size_++;
   }
-  for (int i = 0; i < alphabet_size; ++i) {
+  for (int i = 0; i < alphabet_size_; ++i) {
     if (!getline(matrix_stream, line)) return -3;
     std::istringstream line_stream(line);
-    for (int j = 0; j < alphabet_size; ++j) {
+    for (int j = 0; j < alphabet_size_; ++j) {
       if (!(line_stream >> matrix_[i][j])) return -3;
     }
   }

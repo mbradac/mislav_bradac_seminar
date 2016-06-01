@@ -22,8 +22,10 @@ class ScoreMatrix {
   int Init(const std::string &score_matrix);
   inline int get_position(int c) const { return position_of_letter_[c]; }
   inline int get_score(int i, int j) const { return matrix_[i][j]; }
+  inline int alphabet_size() const { return alphabet_size_; }
 
  private:
+  int alphabet_size_;
   int matrix_[256][256];
   int position_of_letter_[256];
 };
