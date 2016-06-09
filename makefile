@@ -44,11 +44,14 @@ smith_waterman_no_simd: $(SPIKEDIR)/smith_waterman_no_simd.cc $(INC)/sequence.h 
 smith_waterman_no_simd_test: $(TESTDIR)/smith_waterman_no_simd_test.cc smith_waterman_no_simd sequence | $(BINDIR)
 	$(CC) $(CFLAGS) $(TESTDIR)/smith_waterman_no_simd_test.cc $(BINDIR)/smith_waterman_no_simd.o $(BINDIR)/sequence.o -o $(BINDIR)/smith_waterman_no_simd_test
 
-smith_waterman: $(SRCDIR)/smith_waterman.cc $(INC)/sequence.h | $(BINDIR)
+smith_waterman: $(SRCDIR)/smith_waterman.cc $(INC)/sequence.h $(INC)/search.h | $(BINDIR)
 	$(CC) $(CFLAGS) $(SRCDIR)/smith_waterman.cc -c -o $(BINDIR)/smith_waterman.o
 
-smith_waterman_test: $(TESTDIR)/smith_waterman_test.cc smith_waterman sequence | $(BINDIR)
-	$(CC) $(CFLAGS) $(TESTDIR)/smith_waterman_test.cc $(BINDIR)/smith_waterman.o $(BINDIR)/sequence.o -o $(BINDIR)/smith_waterman_test
+search: $(SRCDIR)/search.S | $(BINDIR)
+	$(CC) $(SRCDIR)/search.S -c -o $(BINDIR)/search.o
+
+smith_waterman_test: $(TESTDIR)/smith_waterman_test.cc smith_waterman sequence search | $(BINDIR)
+	$(CC) $(CFLAGS) $(TESTDIR)/smith_waterman_test.cc $(BINDIR)/smith_waterman.o $(BINDIR)/search.o $(BINDIR)/sequence.o -o $(BINDIR)/smith_waterman_test
 
 test: sequence_test matrix_test matrix_test2 matrix_test3 smith_waterman_no_simd_test smith_waterman_test
 	$(BINDIR)/sequence_test

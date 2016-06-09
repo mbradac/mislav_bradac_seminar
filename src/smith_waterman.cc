@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cstdlib>
 #include "smith_waterman.h"
+#include "search.h"
 extern "C" {
 #include <immintrin.h>
 }
@@ -11,26 +12,28 @@ namespace SmithWatermanSIMD {
 
 #ifdef __AVX2__
 
-__m256i Search16(const std::string &query, int query_length,
-                 const __m256i *score, __m256i *f, __m256i *h,
-                 __m256i q, __m256i r, __m256i results, __m256i mask) {
-  __m256i prev_h = _mm256_setzero_si256();
+__m256i SearchMasked16(const char *query, int query_length,
+                       const __m256i *score, __m256i *fa, __m256i *ha,
+                       __m256i q, __m256i r, __m256i results, __m256i mask) {
   __m256i e = _mm256_setzero_si256();
   __m256i z = _mm256_setzero_si256();
+  __m256i h = _mm256_setzero_si256();
   results = _mm256_and_si256(results, mask);
   for (int j = 0; j < query_length; ++j) {
-    h[j + 1] = _mm256_and_si256(h[j + 1], mask);
-    f[j + 1] = _mm256_and_si256(f[j + 1], mask);
-    f[j + 1] = _mm256_max_epi16(_mm256_subs_epi16(h[j + 1], q),
-                                _mm256_subs_epi16(f[j + 1], r));
-    e = _mm256_max_epi16(_mm256_subs_epi16(h[j], q),
-                         _mm256_subs_epi16(e, r));
-    __m256i next_prev_h = h[j + 1];
-    h[j + 1] = _mm256_max_epi16(
-        _mm256_max_epi16(z, f[j + 1]),
-        _mm256_max_epi16(e, _mm256_adds_epi16(prev_h, score[(int)query[j]])));
-    results = _mm256_max_epi16(results, h[j + 1]);
-    prev_h = next_prev_h;
+    __m256i prev_h = _mm256_and_si256(ha[j + 1], mask);
+    __m256i f = _mm256_and_si256(fa[j + 1], mask);
+    h = _mm256_adds_epi16(h, score[(int)query[j]]);
+    h = _mm256_max_epi16(h, z);
+    h = _mm256_max_epi16(h, e);
+    h = _mm256_max_epi16(h, f);
+    ha[j + 1] = h;
+    results = _mm256_max_epi16(results, h);
+    e = _mm256_max_epi16(_mm256_subs_epi16(e, r),
+                         _mm256_subs_epi16(h, q));
+    f = _mm256_max_epi16(_mm256_subs_epi16(f, r),
+                         _mm256_subs_epi16(h, q));
+    fa[j + 1] = f;
+    h = prev_h;
   }
   return results;
 }
@@ -61,6 +64,7 @@ std::vector<short> SmithWaterman(Sequence query, std::vector<Sequence> database,
   __m256i rv = _mm256_set1_epi16(r);
   TranslateSequence(&query, matrix);
   std::vector<short> all_results(database.size());
+  bool masked = true;
 
   for (i = 0; i < 16 && i < (int)database.size(); ++i) {
     idx[i] = 0;
@@ -72,14 +76,20 @@ std::vector<short> SmithWaterman(Sequence query, std::vector<Sequence> database,
     for (int j = 0; j < matrix.alphabet_size(); ++j) {
       for (int k = 0; k < 16; ++k) {
         if (who[k] != -1) {
-          score_cell[k] = matrix.get_score(j,
-                                           database[who[k]].sequence[idx[k]]);
+          score_cell[k] = matrix.get_score(
+              j, database[who[k]].sequence[idx[k]]);
         }
       }
       score[j] = _mm256_load_si256((const __m256i *)score_cell);
     }
-    results = Search16(query.sequence, query_length, score,
-                       f, h, qv, rv, results, mask);
+    if (masked) {
+      results = SearchMasked16(query.sequence.c_str(), query_length, score,
+                               f, h, qv, rv, results, mask);
+    } else {
+      results = SearchNormal16(query.sequence.c_str(), query_length, score,
+                               f, h, qv, rv, results);
+    }
+    masked = false;
     _mm256_store_si256((__m256i *)unpacked_results, results);
     for (int j = 0; j < 16; ++j) {
       if (who[j] != -1 && ++idx[j] == (int)database[who[j]].sequence.size()) {
@@ -90,6 +100,7 @@ std::vector<short> SmithWaterman(Sequence query, std::vector<Sequence> database,
           TranslateSequence(&database[i], matrix);
           idx[j] = 0;
           who[j] = i++;
+          masked = true;
         } else {
           who[j] = -1;
         }
