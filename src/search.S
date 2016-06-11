@@ -25,6 +25,7 @@
 # ymm14 - e4
 # ymm15 - prev_h4
 # r10 - query
+# r11 - real_query_length
 
 .macro STEP s, h, prevh, e
 	vpaddsw \s(%r10),	\h,	\h
@@ -38,12 +39,12 @@
 	vpmaxsw %ymm3,		\h,	%ymm3
 .endm
 
-.macro STEP4 s, h, e
+.macro STEP4 s, h, prevh, e
 	vpaddsw \s(%r10),	\h,	\h
 	vpmaxsw \h,		\e,	\h
 	vpmaxsw \h,		%ymm3,	\h
 	vpmaxsw %ymm2,		\h,	%ymm2
-	vmovdqa \h,		32(%rcx,%r9,4)
+	vmovdqa \h,		\prevh(%rcx,%r9,4)
 	vpsubsw %ymm1,		\e,	\e
 	vpsubsw %ymm1,		%ymm3,	%ymm3
 	vpsubsw %ymm0,		\h,	\h
@@ -62,6 +63,9 @@ SearchNormal16:
 	vmovdqa (%r8),		%ymm13
 	vmovdqa (%r8),		%ymm14
 	shlq	$3,		%rsi
+	movq	%rsi,		%r11
+	shrq	$4,		%rsi
+	shlq	$4,		%rsi
 	jmp	.btm
 
 .top:	movq	(%rdi,%r9,4),	%r10
@@ -70,16 +74,32 @@ SearchNormal16:
 	STEP 0, %ymm4, %ymm9, %ymm5
 	STEP 32, %ymm7, %ymm12, %ymm8
 	STEP 64, %ymm10, %ymm15, %ymm11
-	STEP4 96, %ymm13, %ymm14
+	STEP4 96, %ymm13, 32, %ymm14
 	vmovdqa %ymm3,		32(%rdx,%r9,4)
 
-	vmovdqa	%ymm6,		%ymm4
-	vmovdqa	%ymm9,		%ymm7
-	vmovdqa	%ymm12,		%ymm10
-	vmovdqa	%ymm15,		%ymm13
+	movq	32(%rdi,%r9,4),	%r10
+	vmovdqa	64(%rcx,%r9,4),	%ymm4
+	vmovdqa	64(%rdx,%r9,4),	%ymm3
+	STEP 0, %ymm6, %ymm7, %ymm5
+	STEP 32, %ymm9, %ymm10, %ymm8
+	STEP 64, %ymm12, %ymm13, %ymm11
+	STEP4 96, %ymm15, 64, %ymm14
+	vmovdqa %ymm3,		64(%rdx,%r9,4)
 
-	addq	$8,		%r9
+	addq	$16,		%r9
 .btm:	cmpq	%r9,		%rsi
 	jne	.top
-	vmovdqa	%ymm2,		%ymm0
+	cmpq	%r9,		%r11
+	je	.end
+
+	movq	(%rdi,%r9,4),	%r10
+	vmovdqa	32(%rcx,%r9,4),	%ymm6
+	vmovdqa	32(%rdx,%r9,4),	%ymm3
+	STEP 0, %ymm4, %ymm9, %ymm5
+	STEP 32, %ymm7, %ymm12, %ymm8
+	STEP 64, %ymm10, %ymm15, %ymm11
+	STEP4 96, %ymm13, 32, %ymm14
+	vmovdqa %ymm3,		32(%rdx,%r9,4)
+
+.end:	vmovdqa	%ymm2,		%ymm0
 	ret
