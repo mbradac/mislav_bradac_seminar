@@ -16,8 +16,8 @@ int main() {
     return 0;
   }
   bool ok = true;
-  for (int i = 0; i < 256; ++i) {
-    for (int j = 0; j < 256; ++j) {
+  for (int i = 0; i < ScoreMatrix::kMatrixSize; ++i) {
+    for (int j = 0; j < ScoreMatrix::kMatrixSize; ++j) {
       int a = i < 3 && j < 3 ? out[i][j] : -1;
       ok &= a == matrix.get_score(i, j);
     }

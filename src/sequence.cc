@@ -54,14 +54,19 @@ int ScoreMatrix::Init(const std::string &score_matrix) {
       if (!(line_stream >> matrix_[i][j])) return -3;
     }
   }
+  ++alphabet_size_;
   return 0;
 }
 
-int TranslateSequence(Sequence *sequence, const ScoreMatrix &matrix) {
+int TranslateSequence(Sequence *sequence, const ScoreMatrix &matrix,
+                      int length_multiple) {
   for (int i = 0; i < (int)sequence->sequence.size(); ++i) {
     int c = matrix.get_position(sequence->sequence[i]);
     if (c == -1) return -1;
     sequence->sequence[i] = c;
+  }
+  for (int i = (int)sequence->sequence.size(); i % length_multiple != 0; ++i) {
+    sequence->sequence.push_back(matrix.dummy_character());
   }
   return 0;
 }

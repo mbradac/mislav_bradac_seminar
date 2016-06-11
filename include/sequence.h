@@ -16,6 +16,7 @@ int ParseFasta(const std::string &fasta, std::vector<Sequence> *sequences);
 
 class ScoreMatrix {
  public:
+  const static int kMatrixSize = 257;
   ScoreMatrix() {}
   ScoreMatrix &operator=(const ScoreMatrix &) = delete;
   ScoreMatrix(const ScoreMatrix &) = delete;
@@ -23,15 +24,17 @@ class ScoreMatrix {
   inline int get_position(int c) const { return position_of_letter_[c]; }
   inline int get_score(int i, int j) const { return matrix_[i][j]; }
   inline int alphabet_size() const { return alphabet_size_; }
+  inline int dummy_character() const { return alphabet_size_ - 1; }
   inline const int *get_matrix_row(int i) const { return matrix_[i]; }
 
  private:
   int alphabet_size_;
-  int matrix_[256][256];
-  int position_of_letter_[256];
+  int matrix_[kMatrixSize][kMatrixSize];
+  int position_of_letter_[kMatrixSize];
 };
 
-int TranslateSequence(Sequence *sequence, const ScoreMatrix &matrix);
+int TranslateSequence(Sequence *sequence, const ScoreMatrix &matrix,
+                      int length_multiple);
 }
 
 #endif  // MISLAV_BRADAC_SEMINAR_SEQUENCE_H_

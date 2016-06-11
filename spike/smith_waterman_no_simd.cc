@@ -9,12 +9,12 @@ std::vector<short> SmithWatermanNoSimd(Sequence query,
                                        std::vector<Sequence> database,
                                        const ScoreMatrix &matrix, int q,
                                        int r) {
-  TranslateSequence(&query, matrix);
+  TranslateSequence(&query, matrix, 1);
   int query_length = query.sequence.size();
   std::vector<short> results;
 
   for (Sequence &sequence : database) {
-    TranslateSequence(&sequence, matrix);
+    TranslateSequence(&sequence, matrix, 1);
     std::vector<short> h(query_length + 1), f(query_length + 1);
     std::vector<short> prev_h(query_length + 1);
     results.push_back(0);
