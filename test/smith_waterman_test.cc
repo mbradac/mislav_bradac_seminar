@@ -63,7 +63,6 @@ int main() {
       return 1;
     }
     for (int i = 0; i < (int)results.size(); ++i) {
-      //printf("%d %d\n", results[i], real_results[i]);
       if (results[i] != real_results[i]) {
         printf("WRONG!\n");
         return 1;
