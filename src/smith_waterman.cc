@@ -7,14 +7,15 @@
 extern "C" {
 #include <immintrin.h>
 }
+#include <ctime>
 
 namespace SmithWatermanSIMD {
 
 #ifdef __AVX2__
 
-__m256i SearchMasked16(const char *query, int query_length,
-                       const __m256i *score, __m256i *fa, __m256i *ha,
-                       __m256i q, __m256i r, __m256i results, __m256i mask) {
+__m256i SearchMasked16(const __m256i **query_score, int query_length,
+                       __m256i *fa, __m256i *ha,__m256i q, __m256i r,
+                       __m256i results, __m256i mask) {
   __m256i e = _mm256_setzero_si256();
   __m256i z = _mm256_setzero_si256();
   __m256i h = _mm256_setzero_si256();
@@ -22,7 +23,7 @@ __m256i SearchMasked16(const char *query, int query_length,
   for (int j = 0; j < query_length; ++j) {
     __m256i prev_h = _mm256_and_si256(ha[j + 1], mask);
     __m256i f = _mm256_and_si256(fa[j + 1], mask);
-    h = _mm256_adds_epi16(h, score[(int)query[j]]);
+    h = _mm256_adds_epi16(h, *query_score[j]);
     h = _mm256_max_epi16(h, z);
     h = _mm256_max_epi16(h, e);
     h = _mm256_max_epi16(h, f);
@@ -57,12 +58,18 @@ std::vector<short> SmithWaterman(Sequence query, std::vector<Sequence> database,
   assert(posix_memalign((void **)&f, 256 / 8, 32 * (query_length + 1)) == 0);
   assert(posix_memalign((void **)&score, 256 / 8,
                         32 * matrix.alphabet_size()) == 0);
+  const __m256i **query_score =
+      (const __m256i **)malloc(sizeof(score) * query_length);
+  assert(query_score != nullptr);
   h[0] = _mm256_setzero_si256();
   __m256i results = _mm256_setzero_si256();
   __m256i mask = _mm256_setzero_si256();
   __m256i qv = _mm256_set1_epi16(q);
   __m256i rv = _mm256_set1_epi16(r);
   TranslateSequence(&query, matrix);
+  for (int i = 0; i < query_length; ++i) {
+    query_score[i] = &score[(int)query.sequence[i]];
+  }
   std::vector<short> all_results(database.size());
   bool masked = true;
 
@@ -73,21 +80,23 @@ std::vector<short> SmithWaterman(Sequence query, std::vector<Sequence> database,
   }
 
   while (true) {
+    int database_chars[16];
+    for (int j = 0; j < 16; ++j) {
+      database_chars[j] = who[j] == -1 ? 0 : database[who[j]].sequence[idx[j]];
+    }
     for (int j = 0; j < matrix.alphabet_size(); ++j) {
+      const int *matrix_row = matrix.get_matrix_row(j);
       for (int k = 0; k < 16; ++k) {
-        if (who[k] != -1) {
-          score_cell[k] = matrix.get_score(
-              j, database[who[k]].sequence[idx[k]]);
-        }
+          score_cell[k] = matrix_row[database_chars[k]];
       }
       score[j] = _mm256_load_si256((const __m256i *)score_cell);
     }
     if (masked) {
-      results = SearchMasked16(query.sequence.c_str(), query_length, score,
-                               f, h, qv, rv, results, mask);
+      results = SearchMasked16(query_score, query_length, f,
+                               h, qv, rv, results, mask);
     } else {
-      results = SearchNormal16(query.sequence.c_str(), query_length, score,
-                               f, h, qv, rv, results);
+      results = SearchNormal16(query_score, query_length, f,
+                               h, qv, rv, results);
     }
     masked = false;
     _mm256_store_si256((__m256i *)unpacked_results, results);
@@ -115,6 +124,7 @@ std::vector<short> SmithWaterman(Sequence query, std::vector<Sequence> database,
   free(f);
   free(h);
   free(score);
+  free(query_score);
   return all_results;
 }
 

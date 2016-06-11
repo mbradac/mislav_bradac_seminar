@@ -23,6 +23,7 @@ class ScoreMatrix {
   inline int get_position(int c) const { return position_of_letter_[c]; }
   inline int get_score(int i, int j) const { return matrix_[i][j]; }
   inline int alphabet_size() const { return alphabet_size_; }
+  inline const int *get_matrix_row(int i) const { return matrix_[i]; }
 
  private:
   int alphabet_size_;
