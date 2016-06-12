@@ -6,8 +6,8 @@
 
 namespace SmithWatermanSIMD {
 
-std::vector<short> SmithWaterman(Sequence query, std::vector<Sequence> database,
-                                 const ScoreMatrix &matrix, int q, int r);
+std::vector<int> SmithWaterman(Sequence query, std::vector<Sequence> database,
+                               const ScoreMatrix &matrix, int q, int r);
 }
 
 #endif  // MISLAV_BRADAC_SEMINAR_SMITH_WATERMAN_H_

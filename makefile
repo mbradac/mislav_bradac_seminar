@@ -44,7 +44,7 @@ smith_waterman_no_simd: $(SPIKEDIR)/smith_waterman_no_simd.cc $(INC)/sequence.h 
 smith_waterman_no_simd_test: $(TESTDIR)/smith_waterman_no_simd_test.cc smith_waterman_no_simd sequence | $(BINDIR)
 	$(CC) $(CFLAGS) $(TESTDIR)/smith_waterman_no_simd_test.cc $(BINDIR)/smith_waterman_no_simd.o $(BINDIR)/sequence.o -o $(BINDIR)/smith_waterman_no_simd_test
 
-smith_waterman: $(SRCDIR)/smith_waterman.cc $(INC)/sequence.h $(INC)/search.h | $(BINDIR)
+smith_waterman: $(SRCDIR)/smith_waterman.cc $(INC)/sequence.h $(INC)/specialized_simd.h | $(BINDIR)
 	$(CC) $(CFLAGS) $(SRCDIR)/smith_waterman.cc -c -o $(BINDIR)/smith_waterman.o
 
 search: $(SRCDIR)/search.S | $(BINDIR)

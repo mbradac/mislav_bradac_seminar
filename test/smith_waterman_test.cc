@@ -47,13 +47,13 @@ int main() {
     assert(matrix.Init(matrix_string) == 0);
 
     clock_t start_time = clock();
-    std::vector<short> results =
+    std::vector<int> results =
         SmithWaterman(query_vector[0], database, matrix, qs[t], rs[t]);
     clock_t end_time = clock();
-    std::vector<short> real_results;
+    std::vector<int> real_results;
     std::ifstream results_file;
     results_file.open(results_paths[t].c_str());
-    short result;
+    int result;
     while (results_file >> result) {
       real_results.push_back(result);
     }
