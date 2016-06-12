@@ -12,12 +12,13 @@ namespace SmithWatermanSIMD {
 
 #ifdef __AVX2__
 
+const int kBucketSize = 1024;
+
 template<typename T>
-std::vector<int> Search(const Sequence &query,
-                        const std::vector<Sequence> &database,
-                        const ScoreMatrix &matrix, int q, int r) {
-  if ((int)database.size() == 0) {
-    return std::vector<int>();
+int Search(const Sequence &query, const Sequence *database, int n,
+           const ScoreMatrix &matrix, int q, int r, int *all_results) {
+  if (n <= 0) {
+    return 0;
   }
 
   // Initialize.
@@ -52,9 +53,8 @@ std::vector<int> Search(const Sequence &query,
   for (int j = 0; j < query_length; ++j) {
     query_score[j] = &score[kTimesUnrolled * (int)query.sequence[j]];
   }
-  std::vector<int> all_results(database.size());
   bool masked = true;
-  for (i = 0; i < kNumParallel && i < (int)database.size(); ++i) {
+  for (i = 0; i < kNumParallel && i < n; ++i) {
     idx[i] = 0;
     who[i] = i;
   }
@@ -94,9 +94,12 @@ std::vector<int> Search(const Sequence &query,
       idx[j] += kTimesUnrolled;
       if (who[j] != -1 && idx[j] == (int)database[who[j]].sequence.size()) {
         all_results[who[j]] = extract(unpacked_results[j]);
+        if (did_overflow((T)all_results[who[j]])) { // Cast is necessary.
+          return 1;
+        }
         ++done;
         unpacked_mask[j] = Masks<T>::kZero;
-        if (i != (int)database.size()) {
+        if (i != n) {
           idx[j] = 0;
           who[j] = i++;
           masked = true;
@@ -108,7 +111,7 @@ std::vector<int> Search(const Sequence &query,
       }
     }
     mask = _mm256_load_si256((__m256i *)unpacked_mask);
-    if (done == (int)database.size()) break;
+    if (done == n) break;
   }
 
   // Deallocate resources and return result.
@@ -116,27 +119,54 @@ std::vector<int> Search(const Sequence &query,
   free(h);
   free(score);
   free(query_score);
-  return all_results;
+  return 0;
 }
 
-std::vector<int> SmithWaterman(Sequence query, std::vector<Sequence> database,
-                               const ScoreMatrix &matrix, int q, int r) {
+int SmithWaterman(Sequence query, std::vector<Sequence> database,
+                  const ScoreMatrix &matrix, int q, int r,
+                  ScoreRange score_range, int *results) {
   TranslateSequence(&query, matrix, 1);
   for (Sequence &sequence : database) {
     TranslateSequence(&sequence, matrix, kTimesUnrolled);
   }
-  return Search<short>(query, database, matrix, q, r);
+
+  if (score_range == kChar) {
+    int ret = Search<char>(query, database.data(), (int)database.size(),
+                        matrix, q, r, results);
+    return ret;
+  }
+  if (score_range == kShort) {
+    return Search<short>(query, database.data(), (int)database.size(),
+                         matrix, q, r, results);
+  }
+  if (score_range == kDynamic) {
+    for (int i = 0; i < (int)database.size(); i += kBucketSize) {
+      int n = std::min((int)database.size() - i, kBucketSize);
+      int err = Search<char>(query, database.data() + i, n, matrix,
+                             q, r, results + i);
+      if (err) {
+        err = Search<short>(query, database.data() + i, n, matrix,
+                            q, r, results + i);
+        if (err) {
+          return err;
+        }
+      }
+    }
+  }
+  return 0;
 }
 
 #else
 
-std::vector<int> SmithWaterman(Sequence query, std::vector<Sequence> database,
-                               const ScoreMatrix &matrix, int q, int r) {
+int SmithWaterman(Sequence query, std::vector<Sequence> database,
+                  const ScoreMatrix &matrix, int q, int r,
+                  ScoreRange score_range, int *results) {
   (void)query;
   (void)database;
   (void)matrix;
   (void)q;
   (void)r;
+  (void)score_range;
   fprintf(stderr, "No support for AVX2.\n");
   assert(false);
   return std::vector<short>();
