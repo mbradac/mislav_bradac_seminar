@@ -27,9 +27,10 @@ void PrintUsage() {
   printf("-m FILE     FILE is matrix file\n");
   printf("-r N        N is gap extend penalty        [default: 1]\n");
   printf("-e N        N is gap open_extend penalty   [default: 3]\n");
-  printf("-x N        0 - dynamic score range        [default: 0]\n");
-  printf("            1 - 8bit score range\n");
-  printf("            2 - 16bit score range\n");
+  printf("-x N        N is either 0, 1 or 2          [default: 0\n");
+  printf("                 0 - dynamic score range        [default: 0]\n");
+  printf("                 1 - 8bit score range\n");
+  printf("                 2 - 16bit score range\n");
   printf("-s          silent - don't print results\n");
 }
 
