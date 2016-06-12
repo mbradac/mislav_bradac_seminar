@@ -53,6 +53,9 @@ search: $(SRCDIR)/search.S | $(BINDIR)
 smith_waterman_test: $(TESTDIR)/smith_waterman_test.cc smith_waterman sequence search | $(BINDIR)
 	$(CC) $(CFLAGS) $(TESTDIR)/smith_waterman_test.cc $(BINDIR)/smith_waterman.o $(BINDIR)/search.o $(BINDIR)/sequence.o -o $(BINDIR)/smith_waterman_test
 
+command_line_smith_waterman: $(SRCDIR)/command_line_smith_waterman.cc smith_waterman sequence search | $(BINDIR)
+	$(CC) $(CFLAGS) $(SRCDIR)/command_line_smith_waterman.cc $(BINDIR)/smith_waterman.o $(BINDIR)/search.o $(BINDIR)/sequence.o -o $(BINDIR)/command_line_smith_waterman
+
 test: sequence_test matrix_test matrix_test2 matrix_test3 smith_waterman_no_simd_test smith_waterman_test
 	$(BINDIR)/sequence_test
 	$(BINDIR)/matrix_test
