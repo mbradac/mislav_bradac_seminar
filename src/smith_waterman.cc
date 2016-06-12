@@ -28,7 +28,7 @@ std::vector<int> Search(const Sequence &query,
   int idx[kNumParallel] = {0};
   int who[kNumParallel];
   memset(who, -1, sizeof who);
-  __m256i z = _mm256_set1<T>(Masks<T>::kZero);
+  __m256i z = _mm256_set1(Masks<T>::kZero);
   T unpacked_results[kNumParallel] __attribute__((aligned(kRegisterSize)));
   T unpacked_mask[kNumParallel] __attribute__((aligned(kRegisterSize)));
   T score_cell[kNumParallel] __attribute__((aligned(kRegisterSize)));
@@ -46,8 +46,8 @@ std::vector<int> Search(const Sequence &query,
   h[0] = z;
   __m256i results = z;
   __m256i mask = z;
-  __m256i qv = _mm256_set1<T>(q);
-  __m256i rv = _mm256_set1<T>(r);
+  __m256i qv = _mm256_set1((T)q); // Cast is necessary to call right overload.
+  __m256i rv = _mm256_set1((T)r); // Cast is necessary to call right overload.
 
   for (int j = 0; j < query_length; ++j) {
     query_score[j] = &score[kTimesUnrolled * (int)query.sequence[j]];
@@ -93,7 +93,7 @@ std::vector<int> Search(const Sequence &query,
     for (int j = 0; j < kNumParallel; ++j) {
       idx[j] += kTimesUnrolled;
       if (who[j] != -1 && idx[j] == (int)database[who[j]].sequence.size()) {
-        all_results[who[j]] = unpacked_results[j] & Masks<T>::kExtract;
+        all_results[who[j]] = extract(unpacked_results[j]);
         ++done;
         unpacked_mask[j] = Masks<T>::kZero;
         if (i != (int)database.size()) {

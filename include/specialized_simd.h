@@ -12,14 +12,18 @@ namespace SmithWatermanSIMD {
 
 const int kRegisterSize = 32;
 
-template<typename T>
-inline __m256i _mm256_set1(T x);
-template<>
-inline __m256i _mm256_set1<char> (char x) { return _mm256_set1_epi8(x); }
-template<>
-inline __m256i _mm256_set1<short> (short x) { return _mm256_set1_epi16(x); }
-template<>
-inline __m256i _mm256_set1<int> (int x) { return _mm256_set1_epi32(x); }
+//template<typename T>
+//inline __m256i _mm256_set1(T x);
+//template<>
+//inline __m256i _mm256_set1<char> (char x) { return _mm256_set1_epi8(x); }
+//template<>
+//inline __m256i _mm256_set1<short> (short x) { return _mm256_set1_epi16(x); }
+//template<>
+//inline __m256i _mm256_set1<int> (int x) { return _mm256_set1_epi32(x); }
+
+inline __m256i _mm256_set1(char x) { return _mm256_set1_epi8(x); }
+inline __m256i _mm256_set1(short x) { return _mm256_set1_epi16(x); }
+inline __m256i _mm256_set1(int x) { return _mm256_set1_epi32(x); }
 
 template<typename T>
 inline __m256i SearchNormal(const __m256i **query_score, int query_length,
@@ -46,6 +50,10 @@ inline __m256i SearchMasked<short> (const __m256i **query_score,
                         f, h, q, r, results, z, mask);
 }
 
+inline int extract(short result) {
+  return (unsigned short)result ^ 0x8000;
+}
+
 template<typename T>
 struct Masks {
 };
@@ -53,19 +61,16 @@ struct Masks {
 template<>
 struct Masks<char> {
   const static char kZero = 0x80;
-  const static char kExtract = 0x7F;
 };
 
 template<>
 struct Masks<short> {
   const static short kZero = 0x8000;
-  const static short kExtract = 0x7FFF;
 };
 
 template<>
 struct Masks<int> {
   const static int kZero = 0x80000000;
-  const static int kExtract = 0x7FFFFFFF;
 };
 
 #endif  // __AVX2__
