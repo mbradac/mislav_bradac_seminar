@@ -22,23 +22,27 @@ int main() {
   std::vector<std::string> query_paths = {
     "test_data/query/P19930.fasta",
     "test_data/query/P18080.fasta",
-    "test_data/query/test2.fasta"};
+    "test_data/query/test2.fasta",
+    "test_data/query/P18080.fasta"};
   std::vector<std::string> database_paths = {
     "test_data/database/uniprot_sprot196.fasta",
+    "test_data/database/uniprot_sprot12071.fasta",
     "test_data/database/uniprot_sprot12071.fasta",
     "test_data/database/uniprot_sprot12071.fasta"};
   std::vector<std::string> matrix_paths = {
     "test_data/matrix/blosum50.mat",
     "test_data/matrix/blosum50.mat",
-    "test_data/matrix/blosum50.mat"};
+    "test_data/matrix/blosum50.mat",
+    "test_data/matrix/blosum50LL.mat"};
   std::vector<std::string> results_paths = {
     "test_data/results/P19930_sprot196_blosum50_r1q3",
     "test_data/results/P18080_sprot12071_blosum50_r1q3",
-    "test_data/results/test2_sprot12071_blosum50_r1q3"};
-  std::vector<ScoreRange> score_ranges = {kShort, kDynamic, kChar};
-  std::vector<int> out = {0, 0, 0};
-  std::vector<int> rs = {1, 1, 1};
-  std::vector<int> qs = {3, 3, 3};
+    "test_data/results/test2_sprot12071_blosum50_r1q3",
+    "test_data/results/P18080_sprot12071_blosum50LL_r1q3"};
+  std::vector<ScoreRange> score_ranges = {kShort, kDynamic, kChar, kLongLong};
+  std::vector<int> out = {0, 0, 0, 0};
+  std::vector<int> rs = {1, 1, 1, 100000};
+  std::vector<int> qs = {3, 3, 3, 300000};
 
   for (int t = 0; t < (int)query_paths.size(); ++t) {
     std::vector<Sequence> query_vector;
@@ -52,7 +56,7 @@ int main() {
     ScoreMatrix matrix;
     assert(matrix.Init(matrix_string) == 0);
 
-    std::vector<int> results(database.size());
+    std::vector<long long> results(database.size());
     clock_t start_time = clock();
     if (SmithWaterman(query_vector[0], database, matrix, qs[t], rs[t],
                       score_ranges[t], results.data()) != out[t]) {
@@ -60,10 +64,10 @@ int main() {
       return 1;
     }
     clock_t end_time = clock();
-    std::vector<int> real_results;
+    std::vector<long long> real_results;
     std::ifstream results_file;
     results_file.open(results_paths[t].c_str());
-    int result;
+    long long result;
     while (results_file >> result) {
       real_results.push_back(result);
     }

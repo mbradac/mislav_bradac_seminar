@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
   }
 
   // Solve.
-  std::vector<int> results(database.size());
+  std::vector<long long> results(database.size());
   clock_t start_time = clock();
   int err = SmithWaterman(query_vector[0], database, matrix, q,
                           r, score_range, results.data());

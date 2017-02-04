@@ -16,7 +16,7 @@ const int kBucketSize = 1024;
 
 template<typename T>
 int Search(const Sequence &query, const Sequence *database, int n,
-           const ScoreMatrix &matrix, int q, int r, int *all_results) {
+           const ScoreMatrix &matrix, int q, int r, long long *all_results) {
   if (n <= 0) {
     return 0;
   }
@@ -122,22 +122,53 @@ int Search(const Sequence &query, const Sequence *database, int n,
   return 0;
 }
 
+int SearchNoSimd(const Sequence &query, const Sequence *database, int n,
+                 const ScoreMatrix &matrix, int q, int r,
+                 long long *all_results) {
+  int query_length = query.sequence.size();
+
+  for (int k = 0; k < n; ++k) {
+    const Sequence &sequence = database[k];
+    std::vector<long long> h(query_length + 1), f(query_length + 1);
+    std::vector<long long> prev_h(query_length + 1);
+    all_results[k] = 0;
+    for (int i = 0; i < (int)sequence.sequence.size(); ++i) {
+      long long e = 0;
+      for (int j = 0; j < query_length; ++j) {
+        f[j + 1] = std::max(prev_h[j + 1] - q, f[j + 1] - r);
+        e = std::max(h[j] - q, e - r);
+        h[j + 1] = std::max(
+            prev_h[j] +
+                matrix.get_score(sequence.sequence[i], query.sequence[j]),
+                std::max(e, std::max(f[j + 1], 0LL)));
+        all_results[k] = std::max(all_results[k], h[j + 1]);
+      }
+      prev_h = h;
+    }
+  }
+
+  return 0;
+}
+
 int SmithWaterman(Sequence query, std::vector<Sequence> database,
                   const ScoreMatrix &matrix, int q, int r,
-                  ScoreRange score_range, int *results) {
+                  ScoreRange score_range, long long *results) {
   TranslateSequence(&query, matrix, 1);
   for (Sequence &sequence : database) {
     TranslateSequence(&sequence, matrix, kTimesUnrolled);
   }
 
   if (score_range == kChar) {
-    int ret = Search<char>(query, database.data(), (int)database.size(),
+    return Search<char>(query, database.data(), (int)database.size(),
                         matrix, q, r, results);
-    return ret;
   }
   if (score_range == kShort) {
     return Search<short>(query, database.data(), (int)database.size(),
                          matrix, q, r, results);
+  }
+  if (score_range == kLongLong) {
+    return SearchNoSimd(query, database.data(), (int)database.size(),
+                        matrix, q, r, results);
   }
   if (score_range == kDynamic) {
     for (int i = 0; i < (int)database.size(); i += kBucketSize) {
@@ -148,7 +179,11 @@ int SmithWaterman(Sequence query, std::vector<Sequence> database,
         err = Search<short>(query, database.data() + i, n, matrix,
                             q, r, results + i);
         if (err) {
-          return err;
+          err = SearchNoSimd(query, database.data() + i, n, matrix,
+                             q, r, results + i);
+          if (err) {
+            return err;
+          }
         }
       }
     }
