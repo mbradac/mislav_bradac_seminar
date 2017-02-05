@@ -14,7 +14,7 @@ namespace SmithWatermanSIMD {
 
 const int kBucketSize = 1024;
 
-template<typename T>
+template <typename T>
 int Search(const Sequence &query, const Sequence *database, int n,
            const ScoreMatrix &matrix, int q, int r, long long *all_results) {
   if (n <= 0) {
@@ -38,17 +38,17 @@ int Search(const Sequence &query, const Sequence *database, int n,
                         sizeof(*h) * (query_length + 1)) == 0);
   assert(posix_memalign((void **)&f, kRegisterSize,
                         sizeof(*f) * (query_length + 1)) == 0);
-  assert(posix_memalign((void **)&score, kRegisterSize,
-                        kTimesUnrolled * sizeof(*score) *
-                        matrix.alphabet_size()) == 0);
+  assert(posix_memalign(
+             (void **)&score, kRegisterSize,
+             kTimesUnrolled * sizeof(*score) * matrix.alphabet_size()) == 0);
   const __m256i **query_score =
       (const __m256i **)malloc(sizeof(score) * query_length);
   assert(query_score != nullptr);
   h[0] = z;
   __m256i results = z;
   __m256i mask = z;
-  __m256i qv = _mm256_set1((T)q); // Cast is necessary to call right overload.
-  __m256i rv = _mm256_set1((T)r); // Cast is necessary to call right overload.
+  __m256i qv = _mm256_set1((T)q);  // Cast is necessary to call right overload.
+  __m256i rv = _mm256_set1((T)r);  // Cast is necessary to call right overload.
 
   for (int j = 0; j < query_length; ++j) {
     query_score[j] = &score[kTimesUnrolled * (int)query.sequence[j]];
@@ -80,11 +80,11 @@ int Search(const Sequence &query, const Sequence *database, int n,
 
     // Search.
     if (masked) {
-      results = SearchMasked<T>(query_score, query_length, f,
-                                h, qv, rv, results, &z, mask);
+      results = SearchMasked<T>(query_score, query_length, f, h, qv, rv,
+                                results, &z, mask);
     } else {
-      results = SearchNormal<T>(query_score, query_length, f,
-                                h, qv, rv, results, &z);
+      results =
+          SearchNormal<T>(query_score, query_length, f, h, qv, rv, results, &z);
     }
 
     // Update results, load new sequences if necessary.
@@ -94,7 +94,7 @@ int Search(const Sequence &query, const Sequence *database, int n,
       idx[j] += kTimesUnrolled;
       if (who[j] != -1 && idx[j] == (int)database[who[j]].sequence.size()) {
         all_results[who[j]] = extract(unpacked_results[j]);
-        if (did_overflow((T)all_results[who[j]])) { // Cast is necessary.
+        if (did_overflow((T)all_results[who[j]])) {  // Cast is necessary.
           return 1;
         }
         ++done;
@@ -140,7 +140,7 @@ int SearchNoSimd(const Sequence &query, const Sequence *database, int n,
         h[j + 1] = std::max(
             prev_h[j] +
                 matrix.get_score(sequence.sequence[i], query.sequence[j]),
-                std::max(e, std::max(f[j + 1], 0LL)));
+            std::max(e, std::max(f[j + 1], 0LL)));
         all_results[k] = std::max(all_results[k], h[j + 1]);
       }
       prev_h = h;
@@ -159,28 +159,28 @@ int SmithWaterman(Sequence query, std::vector<Sequence> database,
   }
 
   if (score_range == kChar) {
-    return Search<char>(query, database.data(), (int)database.size(),
-                        matrix, q, r, results);
+    return Search<char>(query, database.data(), (int)database.size(), matrix, q,
+                        r, results);
   }
   if (score_range == kShort) {
-    return Search<short>(query, database.data(), (int)database.size(),
-                         matrix, q, r, results);
+    return Search<short>(query, database.data(), (int)database.size(), matrix,
+                         q, r, results);
   }
   if (score_range == kLongLong) {
-    return SearchNoSimd(query, database.data(), (int)database.size(),
-                        matrix, q, r, results);
+    return SearchNoSimd(query, database.data(), (int)database.size(), matrix, q,
+                        r, results);
   }
   if (score_range == kDynamic) {
     for (int i = 0; i < (int)database.size(); i += kBucketSize) {
       int n = std::min((int)database.size() - i, kBucketSize);
-      int err = Search<char>(query, database.data() + i, n, matrix,
-                             q, r, results + i);
+      int err = Search<char>(query, database.data() + i, n, matrix, q, r,
+                             results + i);
       if (err) {
-        err = Search<short>(query, database.data() + i, n, matrix,
-                            q, r, results + i);
+        err = Search<short>(query, database.data() + i, n, matrix, q, r,
+                            results + i);
         if (err) {
-          err = SearchNoSimd(query, database.data() + i, n, matrix,
-                             q, r, results + i);
+          err = SearchNoSimd(query, database.data() + i, n, matrix, q, r,
+                             results + i);
           if (err) {
             return err;
           }
@@ -202,9 +202,10 @@ int SmithWaterman(Sequence query, std::vector<Sequence> database,
   (void)q;
   (void)r;
   (void)score_range;
+  (void)results;
   fprintf(stderr, "No support for AVX2.\n");
   assert(false);
-  return std::vector<short>();
+  return 1;
 }
 
 #endif  // __AVX2__
