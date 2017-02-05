@@ -4,9 +4,9 @@ This is implementation of Smith Waterman algorithm using AVX2 instruction set.
 
 Core loop of algorithm is very similiar to Rognes' core loop in SWIPE. SWIPE uses only SSE registers (128 bits) while this implementation uses AVX registers (256 bits) thus twice as much sequences can be processed in parallel. You can take a look at SWIPE here: <https://github.com/torognes/swipe>.
 
-Some implementation details were inspired by opal, but opal doesn't implement core loop in assembly nor does any loop unrolling thus this implementation is on some examples ~25% faster. You can take a look at opal here: <https://github.com/Martinsos/opal>.
+Some implementation details were inspired by opal, but opal doesn't implement core loop in assembly nor does any loop unrolling thus this implementation is on some examples ~25% faster (for long queries). You can take a look at opal here: <https://github.com/Martinsos/opal>.
 
-While opal provides maximal 32 bit score range and SWIPE 64 bit score range, this implementation's currently supported maximal score range is 16 bits. (In the near future I will probably add possibility of maximal 32 bit score range.)
+While opal provides maximal 32 bit score range and SWIPE 64 bit score range, this implementation's currently supported maximal score range is 64 bits.
 
 ### Requirements
 
